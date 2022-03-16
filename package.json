@@ -1,0 +1,28 @@
+{
+  "name": "Fusion Editor",
+  "version": "0.0.0",
+  "description": "A tool that allows you to create fusion code visually",
+  "main": "main.js",
+  "scripts": {
+    "start": "npx babel propertyVisual/properties.js --out-file propertyVisual/propertiesCompiled.js && npm run electron",
+    "electron": "startElectron.bat"
+  },
+  "repository": "",
+  "keywords": [],
+  "devDependencies": {
+    "@babel/cli": "^7.17.6",
+    "@babel/core": "^7.17.5",
+    "@babel/preset-react": "^7.16.7",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-register": "^6.26.0",
+    "electron": "^17.0.1"
+  },
+  "dependencies": {
+    "babel": "^6.23.0",
+    "esm": "^3.2.25",
+    "lodash": "^4.17.21",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
+  }
+}

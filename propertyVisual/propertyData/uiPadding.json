@@ -1,0 +1,41 @@
+{
+    "Name": {
+        "type": "string"
+    },
+
+    "PaddingLeft": {
+        "type": "UDim",
+
+        "default": {
+            "Scale": 0,
+            "Offset": 0
+        }
+    },
+
+    "PaddingRight": {
+        "type": "UDim",
+
+        "default": {
+            "Scale": 0,
+            "Offset": 0
+        }
+    },
+
+    "PaddingTop": {
+        "type": "UDim",
+
+        "default": {
+            "Scale": 0,
+            "Offset": 0
+        }
+    },
+
+    "PaddingBottom": {
+        "type": "UDim",
+
+        "default": {
+            "Scale": 0,
+            "Offset": 0
+        }
+    }
+}

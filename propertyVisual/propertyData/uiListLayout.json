@@ -1,0 +1,38 @@
+{
+    "Name": {
+        "type": "string"
+    },
+
+    "FillDirection": {
+        "type": "Enum",
+        "enumType": "FillDirection",
+        "default": "Horizontal"
+    },
+
+    "HorizontalAlignment": {
+        "type": "Enum",
+        "enumType": "HorizontalAlignment",
+        "default": "Center"
+    },
+
+    "VerticalAlignment": {
+        "type": "Enum",
+        "enumType": "VerticalAlignment",
+        "default": "Center"
+    },
+
+    "SortOrder": {
+        "type": "Enum",
+        "enumType": "SortOrder",
+        "default": "LayoutOrder"
+    },
+
+    "Padding": {
+        "type": "UDim",
+
+        "default": {
+            "Scale": 0,
+            "Offset": 0
+        }
+    }
+}

@@ -16,13 +16,35 @@ class CodeView extends react.Component {
                 wordBreak: "none",
                 whiteSpace: "pre",
                 fontSize: "14px",
-                WebkitTextStrokeColor: "rgb(0,0,0)",
-                WebkitTextStrokeWidth: "1px",
-                fontFamily: "Fredoka One",
+                WebkitTextStrokeWidth: "0px",
+                fontFamily: "Consolas, 'Courier New', monospace",
                 left: "5px",
-                width: "97%", height: "95%"
+                width: "97%", height: "95%",
+                WebkitUserSelect: "text"
             }
-        }, ('local screenGui: ScreenGui = New "ScreenGui" {\n\tBackgroundColor3 = Color3.fromRGB(255, 255, 255)\n}\n\n').repeat(25))
+        }, react.createElement("font", {
+            className: "localVariableTextColor"
+        }, "local "), react.createElement("font", {
+            className: "variableNameTextColor"
+        }, "screenGui"), ": ", react.createElement("font", {
+            className: "typeNameTextColor"
+        }, "ScreenGui"), " = ", react.createElement("font", {
+            className: "variableNameTextColor"
+        }, "New"), " ", react.createElement("font", {
+            className: "stringTextColor"
+        }, "\"ScreenGui\" "), "{\n", react.createElement("font", {
+            className: "variableNameTextColor"
+        }, "    BackgroundColor3"), " = " , react.createElement("font", {
+            className: "globalVariableTextColor"
+        }, "Color3"), ".", react.createElement("font", {
+            className: "tablePropertyTextColor"
+        }, "fromRGB"), "(", react.createElement("font", {
+            className: "numberTextColor"
+        }, "255"), ", ", react.createElement("font", {
+            className: "numberTextColor"
+        }, "255"), ", ", react.createElement("font", {
+            className: "numberTextColor"
+        }, "255"), ")\n}")
     }
 } 
 

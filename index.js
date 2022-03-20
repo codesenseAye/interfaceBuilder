@@ -1,9 +1,11 @@
 import react from "react"
 import reactdom from "react-dom"
+
 import lodash from "lodash"
 import textFit from "./textFit"
 
-//window.open("https://developer.mozilla.org", null, "frame=true")
+import fs from "fs"
+import {saveInterface, exportInterfaceAsRbxmx} from "./processXml.js"
 
 const properties = {
     Frame: require("./propertyVisual/propertyData/frame.json"),
@@ -36,6 +38,9 @@ let dragNum;
 
 let dragData;
 let dragDidWork;
+
+let buildElements = {}
+let animateNodes = []
 
 document.onmousemove = function(event) {
     clientX = event.clientX
@@ -88,11 +93,13 @@ class ButtonHandle extends react.Component {
                 height: "15px",
                 width: "15px",
                 boxShadow: "none",
+                cursor:this.props.cursor,
                 left: -7.5 + this.state.left + "px",
                 top: -7.5 + this.state.top + "px",
                 borderRadius: "100%",
                 borderStyle: "solid",
                 borderColor: "rgba(0, 50, 200, " + (visible ? "1" : "0") + ")",
+                outlineWidth: "0px"
             }} onMouseEnter={() => {
                 this.setState({
                     visible: true
@@ -354,6 +361,7 @@ class Draggable extends react.Component {
                     borderSpacing: "5px",
                     borderRadius: this.state.cornerRadius || "0px",
                     borderColor: "rgba(0,0,150, 0.1)",
+                    outlineWidth: "0px",
                     left: `${(props.Position.x / MEASURE_X) * pWidth}px`,
                     top: `${(props.Position.y / MEASURE_Y) * pHeight}px`,
                     height: (props.Size.y / MEASURE_Y) * pHeight + "px",
@@ -383,15 +391,15 @@ class Draggable extends react.Component {
                     }}></div> 
                 : null}
 
-                <ButtonHandle side={[0, 1]}setP={this.setPosition}setS={this.setSize}/>
-                <ButtonHandle side={[1, 1]}setP={this.setPosition}setS={this.setSize}/>
-                <ButtonHandle side={[0, 0]}setP={this.setPosition}setS={this.setSize}/>
-                <ButtonHandle side={[1, 0]}setP={this.setPosition}setS={this.setSize}/>
+                <ButtonHandle side={[0, 1]}setP={this.setPosition}setS={this.setSize} cursor="sw-resize"/>
+                <ButtonHandle side={[1, 1]}setP={this.setPosition}setS={this.setSize} cursor="se-resize"/>
+                <ButtonHandle side={[0, 0]}setP={this.setPosition}setS={this.setSize} cursor="nw-resize"/>
+                <ButtonHandle side={[1, 0]}setP={this.setPosition}setS={this.setSize} cursor="ne-resize"/>
 
-                <ButtonHandle side={[0, 0.5]}setP={this.setPosition}setS={this.setSize}/>
-                <ButtonHandle side={[0.5, 1]}setP={this.setPosition}setS={this.setSize}/>
-                <ButtonHandle side={[1, 0.5]}setP={this.setPosition}setS={this.setSize}/>
-                <ButtonHandle side={[0.5, 0]}setP={this.setPosition}setS={this.setSize}/>
+                <ButtonHandle side={[0, 0.5]}setP={this.setPosition}setS={this.setSize} cursor="w-resize"/>
+                <ButtonHandle side={[0.5, 1]}setP={this.setPosition}setS={this.setSize} cursor="s-resize"/>
+                <ButtonHandle side={[1, 0.5]}setP={this.setPosition}setS={this.setSize} cursor="e-resize"/>
+                <ButtonHandle side={[0.5, 0]}setP={this.setPosition}setS={this.setSize} cursor="n-resize"/>
             </button>
         )
     }
@@ -623,6 +631,7 @@ class Element extends ElementHolder {
     }
 
     componentWillUnmount() {
+        this.props.globalElementsEntry[this.id] = null
         let draggable = document.getElementById(this.id)
 
         if (!draggable) {
@@ -633,6 +642,8 @@ class Element extends ElementHolder {
     }
 
     render() {
+        this.props.globalElementsEntry[this.id] = {state: this.state, children: {}}
+        
         let draggableObject = null
         let foundUIObject = this.state.ClassName.search("UI") 
 
@@ -651,16 +662,16 @@ class Element extends ElementHolder {
 
         return (
             <li id={this.state.key.toString()} className={this.state.draggedOver ? "elementItemDragOver" : "elementItem"} >
-                <h className="elementLabel" 
+                <font className="elementLabel" 
                 onMouseEnter = {(e) => {
                     e.stopPropagation()
                 }}
                 onMouseDown={()=> {
                     this.props.setSelectedElement(this)
                 }}
-                draggable="true" onDragStart={this.drag} onDrop={this.drop} onDragOver={this.dragOver} onDragLeave={this.dragLeave} onDragEnd={this.dragEnd}>{this.state.props.Name}</h> 
+                draggable="true" onDragStart={this.drag} onDrop={this.drop} onDragOver={this.dragOver} onDragLeave={this.dragLeave} onDragEnd={this.dragEnd}>{this.state.props.Name}</font> 
 
-                <button className="delete" onClick={this.props.delete}>D</button>
+                <button className="delete" onClick={this.props.delete}></button>
 
                 <button 
                     style={{visibility:this.state.children.length > 0 ? "visible" : "hidden"}}
@@ -674,7 +685,7 @@ class Element extends ElementHolder {
 
                 <ul className={this.state.childrenViewOpen ? "containerListOpen" : "containerList"}>{this.state.children.map((id) => 
                 
-                <Element key={id.key} props ={id} parentId={this.id} addToParent={this.addElement}
+                <Element key={id.key} props ={id} parentId={this.id} globalElementsEntry={this.props.globalElementsEntry[this.id].children} addToParent={this.addElement}
                     setSelectedElement={this.props.setSelectedElement}
                     delete={() => {
                         this.removeElement(id.key)
@@ -685,7 +696,7 @@ class Element extends ElementHolder {
     }
 }
 
-class App extends ElementHolder {
+class BuildWorkspace extends ElementHolder {
     constructor(props) {
         super(props)
         this.setSelectedElement = this.setSelectedElement.bind(this)
@@ -716,6 +727,8 @@ class App extends ElementHolder {
     }
 
     render() {
+        this.props.flowUp(this)
+
         let height = 1080 * this.state.sizeScale
         let width = 1920 * this.state.sizeScale
 
@@ -725,6 +738,7 @@ class App extends ElementHolder {
             borderRadius: "10px",
             
             borderStyle: "none",
+
             color: "rgb(0,0,0)",
             zIndex: 150
         }
@@ -735,8 +749,14 @@ class App extends ElementHolder {
             }
         }
 
-        return (
-            <div>
+        return (<div
+                className={this.state.inView ? "buildInView" : "buildOutOfView"} id="build" style={{
+                position: "absolute",
+                height: "calc(100vh - 25px)",
+                borderTop: "1px black solid",
+                width: "100vw",
+                backgroundColor: "#555555"
+            }}>
                 <div className="renderedView" id="renderedView" onWheel={(e) => {
                     let scale = Math.max(0.01, Math.min(1, this.state.sizeScale + (e.deltaY / 10000))) 
                     sizeScale = scale
@@ -745,7 +765,7 @@ class App extends ElementHolder {
                         sizeScale: scale
                     })
                 }} onMouseDown={(e) => {
-                    if (e.buttons == 1) {
+                    if (e.buttons != 2) {
                         this.setSelectedElement()
                         return
                     }
@@ -756,6 +776,8 @@ class App extends ElementHolder {
                     if (this.dragCanvas) {
                         clearInterval(this.dragCanvas)
                     }
+
+                    document.body.style.cursor = "move"
 
                     this.dragCanvas = setInterval(() => {
                         let diffX = lastX - clientX
@@ -770,6 +792,7 @@ class App extends ElementHolder {
                         lastY = clientY
                     }, 0)
                 }} onMouseUp={() => {
+                    document.body.style.cursor = null
                     clearInterval(this.dragCanvas)
                 }}>
                     <div className="formatView" style={{
@@ -779,34 +802,50 @@ class App extends ElementHolder {
                         zIndex: 100,
                     }}>
                         <select style={{
+                            appearance: "none",
                             position: "absolute",
                             top: "5px",
                             borderWidth: "1px",
-                            outlineWidth: "0px",
                             borderColor:"rgb(0,0,0)",
+                            color: "rgb(255,255,255)",
+                            fontFamily: "Fredoka One",
                             borderRadius: "5px",
-                            backgroundColor: "rgb(255,255,255)"
+                            backgroundColor: "rgb(100,100,100)",
+                            fontSize: "0.65em",
+                            outline: "none"
                         }}>
-                            <option value={1} style={{
-                                color: "rgb(0,0,0)",
-                                fontFamily: "Fredoka One",
-                                borderRadius: "5px"
-                            }}>DESKTOP</option>
+                            <option value={1}>DESKTOP</option>
                             <option value={2}>PHONE</option>
                             <option value={3}>TABLET</option>
                         </select>
                     </div>
                     <div style={{
-                            overflow:"hidden",
                             backgroundColor: "rgb(255, 255, 255)",
+                            borderColor: "rgb(0,0,0)",
+                            borderWidth: "1px",
+                            borderStyle: "groove",
                             position: "absolute",
                             left: "calc(50% - " + (width / 2) + "px - " + this.state.offsetX + "px)",
                             top: "calc(50% - " + (height / 2) + "px - " + this.state.offsetY + "px)",
                             height: height + "px",
                             width: width + "px",
                         }}
-                        id="canvas"
                     >
+                        <div id="canvas" style={{
+                            position:"absolute",
+                            width: "100%",
+                            height: "100%",
+                            overflow:"hidden",
+                        }}></div>
+                        
+                        <div style={{
+                            position: "absolute",
+                            top: "-25px",
+                            color: "rgb(255,255,255)",
+                            fontFamily: "Fredoka One",
+                            WebkitTextStrokeColor: "rgb(0,0,0)",
+                            WebkitTextStrokeWidth: "1px"
+                        }}>1080x1920</div>
                     </div>
                 </div>
                 <div className="elementView">
@@ -859,7 +898,7 @@ class App extends ElementHolder {
                     <div  className={this.state.draggedOver ? "elementsDraggedOver" : "elements"} onDrop={this.drop} onDragOver={this.dragOver} onDragLeave={this.dragLeave}>
                         <ul className="elementList">{
                             this.state.children.map((id) => {
-                                return (<Element key={id.key} props ={id} delete={() => {
+                                return (<Element key={id.key} props ={id} globalElementsEntry={buildElements} delete={() => {
                                     this.removeElement(id.key)
                                 }} setSelectedElement={this.setSelectedElement}/>)
                             })
@@ -877,4 +916,484 @@ class App extends ElementHolder {
     }
 }
 
-reactdom.render(<App />, document.getElementById("appBody"))
+class Node extends react.Component {
+    constructor(props) {
+        super(props)
+
+        this.state = {location: {x: 25, y: 75}, nodeConnectionLocations: {}}
+        this.intervals = {}
+        
+        this.clearIntervals = this.clearIntervals.bind(this)
+    }
+
+    clearIntervals() {
+        for (let i = 0; i < this.intervals.length; i++) {
+            let value = this.intervals[i]
+            clearInterval(value)
+        }
+
+        this.intervals = {}
+    }
+
+    componentWillUnmount() {
+        this.clearIntervals()
+    }
+
+    render() {
+        this.clearIntervals()
+
+        let bodyRect = document.getElementById("appBody").getBoundingClientRect()
+        let isEvent = this.props.node.nodeType == "Event"
+
+        let canvas = document.getElementById("nodeCanvas")
+        let canvasRect = canvas.getBoundingClientRect()
+
+        let ctx = canvas.getContext("2d")
+        ctx.clearRect(0, 0, canvasRect.width, canvasRect.height)
+
+        let localCanvas = document.getElementById(this.props.id + "_canvas")
+
+        if (localCanvas) {
+            localCanvas.width = canvasRect.width
+            localCanvas.height = canvasRect.height 
+
+            let localCtx = localCanvas.getContext("2d")
+            let localRect = localCanvas.getBoundingClientRect()
+
+            localCtx.clearRect(0, 0, localRect.width, localRect.height)
+        }
+
+        return (<div id={this.props.id} style={{
+            position: "absolute",
+            left: this.state.location.x,
+            top: this.state.location.y,
+            height: "min-content",
+            width: "min-content",
+            backgroundColor: "rgb(125,125,125)",
+            border: "3px black solid",
+
+            borderRadius: "5px",
+        }} onMouseDown={(e) => {
+            if (this.dragging) {
+                return
+            }
+
+            if (e.buttons != 1) {
+                return
+            }
+
+            let rect = document.getElementById(this.props.id).getBoundingClientRect()
+            let correctY = clientY + 27.5
+
+            let offsetX = rect.left - clientX
+            let offsetY = rect.top - correctY
+
+            this.dragging = true
+            e.stopPropagation()
+
+            document.body.style.cursor = "move"
+
+            let drag = setInterval(() => {
+                this.setState({
+                    location: {x: clientX + offsetX, y: clientY + offsetY}
+                })
+            }, 0)
+
+            document.onmouseup = (e) => {
+                if (e.button != 0) {
+                    return
+                }
+                
+                this.dragging = false
+                document.body.style.cursor = null
+
+                clearInterval(drag)
+            }
+        }}>
+            <canvas id={this.props.id + "_canvas"} style={{
+                zIndex: 0,  position: "fixed", pointerEvents: "none", top: "0px", left: "0px",
+                height: `${bodyRect.height}px`, width: `${bodyRect.width}px`
+            }}></canvas>
+
+            <font style={{
+                position: "absolute",
+                marginLeft: "10px",
+                marginTop: "-25px",
+                fontFamily: "Fredoka One",
+                WebkitTextStrokeColor: "rgb(0,0,0)",
+                WebkitTextStrokeWidth: "1px",
+                color:"rgb(255,255,255)",
+            }}>{isEvent ? "EVENT" : "CHANGE"}</font>
+
+            {this.props.node.connections.map((nodeId) => {
+                let localCanvas = document.getElementById(this.props.id + "_canvas")
+                let localRect = localCanvas.getBoundingClientRect()
+                
+                let localCtx = localCanvas.getContext("2d")
+                let otherNode = document.getElementById(nodeId)
+                
+                localCtx.beginPath()
+
+                let updateOtherNodeLocation = () => {
+                    otherNode = document.getElementById(nodeId)
+
+                    if (!otherNode) {
+                        return
+                    }
+
+                    let rect = otherNode.getBoundingClientRect()
+                    let savedLocation = this.state.nodeConnectionLocations[nodeId]
+
+                    if (savedLocation && rect.left == savedLocation.x && rect.top == savedLocation.y) {
+                        return
+                    }
+
+                    this.setState((state) => {
+                        let newLocations = lodash.cloneDeep(state.nodeConnectionLocations)
+                        newLocations[nodeId] = {x: rect.left, y: rect.top}
+
+                        return {nodeConnectionLocations: newLocations}
+                    })
+                    
+                }
+
+                if (this.intervals[nodeId]) {
+                    clearInterval(this.intervals[nodeId])
+                }
+
+                this.intervals[nodeId] = setInterval(updateOtherNodeLocation, 50)
+
+                let nodePointRect = document.getElementById(this.props.id + "_button").getBoundingClientRect()
+                localCtx.moveTo(nodePointRect.left, nodePointRect.top)
+                
+                let rect = otherNode.getBoundingClientRect()
+
+                let otherX = nodePointRect.left + (nodePointRect.width / 2)
+                let otherY = nodePointRect.top - (nodePointRect.height / 2)
+
+                let x = rect.left + (rect.width / 2)
+                let y = rect.top - localRect.top - (rect.height / 2)
+
+                localCtx.bezierCurveTo(otherX, otherY, x, y, x, y)
+
+                let grad = localCtx.createLinearGradient(otherX, otherY, x, y)
+                grad.addColorStop(0, "rgb(0,255,0)")
+                grad.addColorStop(0.5, "rgb(0,0,0)")
+                grad.addColorStop(1, "rgb(0,255,0)")
+                
+                localCtx.lineWidth = 4
+                localCtx.strokeStyle = grad
+
+                localCtx.stroke()
+            })}
+
+            {isEvent ? [<font style={{margin: "10px", color: "rgb(255,255,255)"}}>Element path:</font>,
+            <input type="search" style={{margin: "10px"}}></input>,
+
+            <font style={{margin: "10px", color: "rgb(255,255,255)"}}>Event name:</font>,
+            <input type="search" style={{margin: "10px"}}></input>] :
+            
+            [<font style={{margin: "10px", color: "rgb(255,255,255)"}}>Properties:</font>,
+            <input type="search" style={{margin: "10px"}}></input>,
+            <font style={{margin: "10px", color: "rgb(255,255,255)"}}>Transition time:</font>,
+            <input type="search" style={{margin: "10px"}}></input>
+            ]
+            }
+            
+            <button className={isEvent ? "eventNodePoint" : "changeNodePoint"} id={this.props.id + "_button"}style={{
+                position: "absolute",
+                height: "15px",
+                width: "15px",
+
+                left: `calc(${isEvent ? "100%" : "0%"} - 7.5px)`,
+                top: "calc(50% - 7.5px)", 
+
+                borderRadius: "5px",
+                borderColor: "rgb(0,200,0)",
+
+                outline: "0",
+                backgroundColor: "rgb(75,75,75)"
+            }} onMouseDown={(e) => {
+                if (e.buttons != 1) {
+                    return
+                }
+
+                e.stopPropagation()
+                document.body.style.cursor = "move"
+
+                let button = document.getElementById(this.props.id + "_button")
+                let rect = button.getBoundingClientRect()
+
+                canvasRect = canvas.getBoundingClientRect()
+                
+                canvas.width = canvasRect.width
+                canvas.height = canvasRect.height 
+
+                ctx.scale(1, 1)
+                ctx.imageSmoothingEnabled = true
+
+                let nodePoints = document.getElementsByClassName(isEvent ? "changeNodePoint" : "eventNodePoint")
+
+                let drag = setInterval(() => {
+                    ctx.closePath()
+                    ctx.clearRect(0, 0, canvasRect.width, canvasRect.height)
+
+                    ctx.beginPath()
+
+                    let x = rect.left + (rect.width / 2)
+                    let y = rect.top + (rect.height / 2) - canvasRect.top
+                    ctx.moveTo(x, y)
+
+                    let endY = clientY - canvasRect.top
+                    let endX = clientX
+
+                    ctx.lineWidth = 4
+                    ctx.bezierCurveTo(x + 50, y - (y - endY), endX, endY + (y - endY), clientX, clientY - canvasRect.top);
+
+                    for (let i = 0; i < nodePoints.length; i++) {
+                        let nodePoint = nodePoints[i]
+                        let pointRect = nodePoint.getBoundingClientRect()
+
+                        let over = (pointRect.left < clientX)
+                        over = over && (pointRect.top < clientY)
+
+                        over = over && (pointRect.left + pointRect.width > clientX)
+                        over = over && (pointRect.top + pointRect.height > clientY)
+                        
+                        if (!over) {
+                            nodePoint.style.borderColor = "rgb(0,255,0)"
+                            continue
+                        }
+
+                        nodePoint.style.borderColor = "rgb(255,0,0)"
+                    }
+
+                    ctx.stroke();
+                }, 40)
+
+                document.onmouseup = (e) => {
+                    if (e.button != 0) {
+                        return
+                    }
+
+                    for (let i = 0; i < nodePoints.length; i++) {
+                        let nodePoint = nodePoints[i]
+                        
+                        if (nodePoint.style.borderColor == "rgb(255, 0, 0)") {
+                            this.props.workspace.setState((state) => {
+                                let newNodes = lodash.cloneDeep(state.nodes)
+                                newNodes[this.props.nodeIndex].connections.push(nodePoint.id)
+
+                                return {
+                                    nodes: newNodes
+                                }
+                            })
+                        }
+                        
+                        nodePoint.style.borderColor = "rgb(0,255,0)"
+                    }
+                    
+                    this.dragging = false
+                    document.body.style.cursor = null
+
+                    ctx.closePath()
+                    ctx.clearRect(0, 0, canvasRect.width, canvasRect.height)
+
+                    clearInterval(drag)
+                }
+            }}></button>
+        </div>)
+    }
+}
+
+class AnimateWorkspace extends react.Component {
+    constructor(props) {
+        super(props)
+        this.state = {nodes: []}
+        this.createNode = this.createNode.bind(this)
+    }
+
+    createNode(type) {
+        let newNodes = lodash.cloneDeep(this.state.nodes)
+
+        newNodes.push({
+            id: Math.random() * 1e9,
+            nodeType: type,
+            connections: []
+        })
+
+        this.setState({
+            contextMenuLocation: null,
+            nodes: newNodes
+        })
+    }
+
+    render() {
+        this.props.flowUp(this)
+        let bodyRect = document.getElementById("appBody").getBoundingClientRect()
+
+        return (<div className={this.state.inView ? "animateInView" : "animateOutOfView"} id="animate" style={{
+            position: "absolute",
+            height: `calc(100vh - 25px)`,
+            width: `100%`,
+        }} onMouseDown={(e) => {
+            if (e.button != 2) {
+                this.setState({
+                    contextMenuLocation: null
+                })
+            
+                return
+            }
+
+            this.setState({
+                contextMenuLocation: {x: e.clientX, y: e.clientY}
+            })
+        }}>
+            <canvas id="nodeCanvas" style={{
+                position: "absolute",
+                height: `calc(${bodyRect.height}px - 25px)`,
+                width: `${bodyRect.width}px`,
+            }}></canvas>
+
+            {this.state.nodes.map((node, index) => {
+                return (<Node id={node.id} key={node.id} nodeIndex={index} node={node} workspace={this}/>)
+            })}
+
+            <div style={{
+                height: "50px", width: "100%", position: "absolute", top: "0px", left: "0px", 
+                backgroundColor: "rgb(75,75,75)",
+                backgroundImage: "repeating-linear-gradient(90deg, rgb(25,25,25) 0px, transparent 1px, transparent 100%)",
+                borderBottom: "5px rgb(0,0,0) solid",
+                backgroundSize: "25px 50px",
+            }}></div>
+            <div style={{
+                border: "10px white solid",
+                borderRadius: "3px",
+                backgroundColor:"rgb(255,255,255)", position: "absolute", height: "max-content", width: "min-content",
+                visibility: this.state.contextMenuLocation ? "visible" : "hidden",
+                left: this.state.contextMenuLocation ? this.state.contextMenuLocation.x : 0,
+                top: this.state.contextMenuLocation ? this.state.contextMenuLocation.y : 0
+            }}>
+                <button 
+                    style={{outline: "0", color: "rgb(255,255,255)", backgroundColor: "rgb(75,75,75)", border: "3px black solid", borderRadius: "4px"}} 
+                    onMouseDown={(e) => {
+                        e.stopPropagation()
+                        this.createNode("Event")
+                    }
+                }>
+                    ADD EVENT
+                </button>
+                <button 
+                    style={{outline: "0", color: "rgb(255,255,255)", backgroundColor: "rgb(75,75,75)", border: "3px black solid", borderRadius: "4px", marginTop: "7px"}}
+                    onMouseDown={(e) => {
+                        e.stopPropagation()
+                        this.createNode("Change")
+                    }
+                }>
+                    ADD CHANGE
+                </button>
+            </div>
+
+        </div>)
+    }
+}
+
+class Workspaces extends react.Component {
+    constructor(props) {
+        super(props)
+
+        this.state = {
+            inView: "build"
+        }
+    }
+
+    render() {
+        let animateState
+        let buildState
+
+        let buttonStyle = {
+            zIndex: 500,
+            color: "rgb(255,255,255)",
+            borderRadius: "5px",
+            borderColor: "rgb(0,0,0)",
+            borderWidth: "0.5px",
+            outlineWidth: "0px",
+            backgroundColor: "rgb(100,100,100)",
+            marginLeft: "10px",
+            height: "15px",
+            fontFamily: "Fredoka One",
+            fontSize: "0.5em",
+            WebkitAppRegion: "no-drag"
+        }
+
+        let onClick = (workspaceName) => {
+            return () => {
+                buildState.setState({
+                    inView: workspaceName == "build"
+                })
+                
+                animateState.setState({
+                    inView: workspaceName == "animate"
+                })
+    
+                this.setState({
+                    inView: workspaceName
+                })
+            }
+        }
+
+        return (<div>
+            <div style={{zIndex: "1000", position: "absolute", marginTop: "-25px", marginLeft: "calc(165px)"}}>
+                <button className={this.state.inView == "animate" ? "workspaceButtonSelected" : "workspaceButtonUnselected"} style={buttonStyle} onClick={onClick("animate")}>ANIMATE</button>
+                <button className={this.state.inView == "build" ? "workspaceButtonSelected" : "workspaceButtonUnselected"} style={buttonStyle} onClick={onClick("build")}>BUILD</button>
+            </div>
+            <div>
+                <AnimateWorkspace flowUp={(state) => {
+                    animateState = state
+                }}/>
+                <BuildWorkspace flowUp={(state) => {
+                    buildState = state
+                    
+                    if (!this.first) {
+                        this.first = true
+                        
+                        buildState.setState({
+                            inView: true
+                        })
+                    }
+                }}/>
+            </div>
+        </div>)
+    }
+}
+
+reactdom.render(<Workspaces />, document.getElementById("appBody"))
+
+let closeAppDrawer = document.getElementById("closeAppDrawer")
+let appDrawer = document.getElementById("appDrawer")
+
+let saveBttn = document.getElementById("saveBttn")
+let openBttn = document.getElementById("openBttn")
+
+saveBttn.onmousedown = () => {
+    appDrawer.className = "appDrawerIn"
+    closeAppDrawer.style.visibility = "hidden"
+
+    //saveInterface()
+}
+
+openBttn.onmousedown = () => {
+    appDrawer.className = "appDrawerIn"
+    closeAppDrawer.style.visibility = "hidden"
+
+    //saveInterface()
+}
+
+let exportBttn = document.getElementById("exportAsRbxmxBttn")
+
+exportBttn.onmousedown = () => {
+    appDrawer.className = "appDrawerIn"
+    closeAppDrawer.style.visibility = "hidden"
+    
+    setTimeout(() => exportInterfaceAsRbxmx(buildElements, animateNodes), 250)
+}

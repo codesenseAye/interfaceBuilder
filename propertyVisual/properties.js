@@ -82,7 +82,7 @@ class Property extends react.Component {
             inputElement.value = value
         } else if (property.type == "File") {
             // cant set value field because its a file input
-        } else {
+        } else if (inputElement) {
             inputElement.value = value
         }
 
@@ -238,7 +238,7 @@ class PropertyView extends react.Component {
 
     render() {
         if (!this.props.element) {
-            return (<h style={{
+            return (<h1 style={{
                 position: "absolute",
                 color: "white",
                 fontSize: "1em",
@@ -248,7 +248,7 @@ class PropertyView extends react.Component {
                 WebkitTextStrokeColor: "rgb(0,0,0)",
                 WebkitTextStrokeWidth: "1px",
                 fontFamily: "Fredoka One"
-            }}>SELECT AN ELEMENT</h>)
+            }}>SELECT AN ELEMENT</h1>)
         }
 
         let elements = []

@@ -83,7 +83,7 @@ class Property extends react.Component {
     } else if (property.type == "CornerRadius") {
       inputElement.value = value;
     } else if (property.type == "File") {// cant set value field because its a file input
-    } else {
+    } else if (inputElement) {
       inputElement.value = value;
     }
   }
@@ -277,7 +277,7 @@ class PropertyView extends react.Component {
 
   render() {
     if (!this.props.element) {
-      return /*#__PURE__*/React.createElement("h", {
+      return /*#__PURE__*/React.createElement("h1", {
         style: {
           position: "absolute",
           color: "white",

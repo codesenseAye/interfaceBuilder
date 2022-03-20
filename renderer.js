@@ -1,15 +1,6 @@
-// This file is required by the index.html file and will
-// be executed in the renderer process for that window.
-// No Node.js APIs are available in this process because
-// `nodeIntegration` is turned off. Use `preload.js` to
-// selectively enable features needed in the rendering
-// process.
-
 const remote = require('electron').remote;
-const win = remote.getCurrentWindow(); /* Note this is different to the
-html global `window` variable */
+const win = remote.getCurrentWindow(); 
 
-// When document has loaded, initialise
 document.onreadystatechange = (event) => {
     if (document.readyState == "complete") {
         handleWindowControls();
@@ -17,26 +8,109 @@ document.onreadystatechange = (event) => {
 };
 
 window.onbeforeunload = (event) => {
-    /* If window is reloaded, remove win event listeners
-    (DOM element listeners get auto garbage collected but not
-    Electron win listeners as the win is not dereferenced unless closed) */
     win.removeAllListeners();
 }
 
 function handleWindowControls() {
-    // Make minimise/maximise/restore/close buttons work when they are clicked
+    let appMenuDrawer = document.createElement("div")
+    appMenuDrawer.className = "appDrawerIn"
+    
+    appMenuDrawer.style.position = "absolute"
+    appMenuDrawer.style.left = "10px"
+    
+    appMenuDrawer.style.top = "35px"
+    appMenuDrawer.style.backgroundColor = "rgb(200,200,200)"
+    appMenuDrawer.style.borderRadius = "3px"
+
+    appMenuDrawer.style.height = "min-content"
+    appMenuDrawer.style.width = "min-content"
+
+    appMenuDrawer.id = "appDrawer"
+    appMenuDrawer.style.border = "2px rgb(100,100,100) solid"
+
+    let save = document.createElement("button")
+    let open = document.createElement("button")
+    let exportAsRbxmx = document.createElement("button")
+    
+    save.style.margin = "10px"
+    save.style.backgroundColor = "rgb(150,150,150)"
+
+    save.style.border = "1px rgb(100,100,100) solid"
+    save.style.borderRadius = "3px"
+
+    open.style.margin = "10px"
+    open.style.marginTop = "0px"
+
+    open.style.backgroundColor = "rgb(150,150,150)"
+    open.style.border = "1px rgb(100,100,100) solid"
+    open.style.borderRadius = "3px"
+    
+    exportAsRbxmx.style.margin = "10px"
+    exportAsRbxmx.style.marginTop = "0px"
+
+    exportAsRbxmx.style.backgroundColor = "rgb(150,150,150)"
+    exportAsRbxmx.style.border = "1px rgb(100,100,100) solid"
+    exportAsRbxmx.style.borderRadius = "3px"
+
+    save.innerHTML = "SAVE"
+    open.innerHTML = "OPEN"
+    exportAsRbxmx.innerHTML = "EXPORT AS RBXMX"
+
+    save.id = "saveBttn"
+    open.id = "openBttn"
+    exportAsRbxmx.id = "exportAsRbxmxBttn"
+
+    save.style.color = "rgb(255,255,255)"
+    open.style.color = "rgb(255,255,255)"
+    exportAsRbxmx.style.color = "rgb(255,255,255)"
+
+    save.style.fontFamily = "Fredoka One"
+    open.style.fontFamily = "Fredoka One"
+    exportAsRbxmx.style.fontFamily = "Fredoka One"
+
+    save.style.WebkitTextStroke = "1px black"
+    open.style.WebkitTextStroke = "1px black"
+    exportAsRbxmx.style.WebkitTextStroke = "1px black"
+
+    appMenuDrawer.appendChild(save)
+    appMenuDrawer.appendChild(open)
+    appMenuDrawer.appendChild(exportAsRbxmx)
+
+    document.getElementById("topbar").appendChild(appMenuDrawer)
+    
+    let closeDrawer = document.createElement("div")
+    closeDrawer.id = "closeAppDrawer"
+
+    closeDrawer.style.position = "absolute"
+    
+    closeDrawer.style.height = "100%"
+    closeDrawer.style.width = "100%"
+
+    closeDrawer.style.visibility = "hidden"
+    document.body.appendChild(closeDrawer)
+    
+    document.getElementById('appMenu').addEventListener("click", event => {
+        appMenuDrawer.className = appMenuDrawer.className == "appDrawerIn" ? "appDrawerOut" : "appDrawerIn"
+        closeDrawer.style.visibility = appMenuDrawer.className == "appDrawerIn" ? "hidden" : "visible"
+    });
+
+    closeDrawer.onmousedown = () => {
+        appMenuDrawer.className = "appDrawerIn"
+        closeDrawer.style.visibility = "hidden"
+    }
+
     document.getElementById('min-button').addEventListener("click", event => {
         win.minimize();
     });
 
-    //document.getElementById('max-button').addEventListener("click", event => {
-    //    win.maximize();
-    //});
+    document.getElementById('icon-restore').src = "./icons/restore.png"
 
     document.getElementById('restore-button').addEventListener("click", event => {
         if (win.isMaximized()) {
+            document.getElementById('icon-restore').src = "./icons/restore.png"
             win.unmaximize();
         } else {
+            document.getElementById('icon-restore').src = "./icons/maximize.png"
             win.maximize()
         }
     });
@@ -44,17 +118,4 @@ function handleWindowControls() {
     document.getElementById('close-button').addEventListener("click", event => {
         win.close();
     });
-
-    // Toggle maximise/restore buttons when maximisation/unmaximisation occurs
-    //toggleMaxRestoreButtons();
-    //win.on('maximize', toggleMaxRestoreButtons);
-    //win.on('unmaximize', toggleMaxRestoreButtons);
-
-    /*function toggleMaxRestoreButtons() {
-        if (win.isMaximized()) {
-            document.body.classList.add('maximized');
-        } else {
-            document.body.classList.remove('maximized');
-        }
-    }*/
 }

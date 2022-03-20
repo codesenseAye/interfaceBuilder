@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+   <title>Fusion Editor</title>
+   <script src="renderer.js"></script>
+   <script src="https://unpkg.com/react@16.5.2/umd/react.production.min.js"></script>
+   <script src="https://unpkg.com/react-dom@16.5.2/umd/react-dom.production.min.js"></script>
+   <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
+
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+
+   <style>
+      #window-controls {
+         position: absolute;
+         top: 5px;
+         height:15px;
+         width:150px;
+         right: 10px;
+         z-index: 1000
+      }
+
+      #window-controls .button {
+         position:absolute;
+         width: 20px;
+         height: 100%;
+      }
+
+      #min-button {
+         top: -4.5px;
+         right: 60px;
+         transition-duration: 0.25s;
+      }
+
+      #min-button:hover {
+         width: 25px;
+         height: 110%;
+         filter: invert(75%);
+         transition-duration: 0.25s;
+      }
+
+      #restore-button {
+         right: 30px;
+         transition-duration: 0.25s;
+      }
+
+      #restore-button:hover {
+         width: 25px;
+         height: 110%;
+         filter: invert(75%);
+         
+         
+         transition-duration: 0.25s;
+      }
+
+      #close-button {
+         right: 0px;
+         transition-duration: 0.25s;
+      }
+
+      #close-button:hover {
+         width: 25px;
+         height: 110%;
+         filter: invert(75%);
+         transition-duration: 0.25s;
+      }
+   </style>
+
+   <div style="position:absolute;left:70px;height:25px;z-index:100;width:calc(100% - 170px);top:0px;-webkit-app-region:drag;border-bottom-width:2px;border-bottom-color: black;">
+   </div>
+   <div id="topbar" style="z-index:105;position:absolute;left:0px;height:25px;width:100%;top:0px;background-color:rgb(126, 126, 126);border-bottom-width:2px;border-bottom-color: black;">
+      <button id="appMenu" style="background-color:rgba(0,0,0,0);outline-width: 0px;border-width: 0px;position:absolute;font-size: 1.5em;left:20px;top:-7.5px;font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;color:white;-webkit-text-stroke: 1px rgb(0,0,0);">. . .</button>
+      <button style="background-color:rgba(0,0,0,0);outline-width: 0px;border-width: 0px;position:absolute;font-size: 0.8em;left:60px;top:4.5px;font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;color:white;-webkit-text-stroke: 1px rgb(0,0,0);">Interface Builder</button>
+      <div id="window-controls">
+
+         <div class="button" id="min-button">
+         <img class="icon" src="./icons/minimize.png" draggable="false" style="bottom:20px;height:100%;width:100%;object-fit:contain"></img>
+         </div>
+
+         <div class="button" id="restore-button">
+         <img class="icon" id="icon-restore" src="./icons/restore.png" draggable="false" style="height:100%;width:100%;object-fit:contain"></img>
+         </div>
+
+         <div class="button" id="close-button">
+         <img class="icon" src="./icons/close.png" draggable="false" style="height:100%;width:100%;object-fit:contain"></img>
+         </div>
+
+      </div>
+   </div>
+  
+   <div id="appBody" style="position:absolute;top:27px;left:0px;height:calc(100% - 27px);width:100%"></div>
+
+   <link href="./styles.css" rel="stylesheet">
+   <script src="./index.js" type="text/babel" ></script>
+</html>

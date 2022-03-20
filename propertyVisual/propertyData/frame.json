@@ -1,0 +1,48 @@
+{
+    "Position": {
+        "type": "UDim2",
+
+        "default": {
+            "x": 0,
+            "y": 0
+        }
+
+    },
+
+    "ZIndex": {
+        "type": "number",
+        "default": 0
+    },
+
+    "Size": {
+        "type": "UDim2",
+
+        "default": {
+            "x": 0,
+            "y": 0
+        }
+    },
+
+    "ClipsDescendants": {
+        "type": "boolean",
+        "default": true
+    },
+    
+    "BackgroundTransparency": {
+        "type": "number",
+        "default": 1
+    },
+
+    "BackgroundColor3": {
+        "type": "Color3",
+        "default": {
+            "R": 0.9,
+            "G": 0.9,
+            "B": 0.9
+        }
+    },
+    
+    "Name": {
+        "type": "string"
+    }
+}

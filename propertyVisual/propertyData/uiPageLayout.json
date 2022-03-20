@@ -1,0 +1,32 @@
+{
+    "Name": {
+        "type": "string"
+    },
+
+    "EasingDirection": {
+        "type": "Enum",
+        "enumType": "EasingDirection",
+        "default": "InOut"
+    },
+
+    "EasingStyle": {
+        "type": "Enum",
+        "enumType": "EasingStyle",
+        "default": "Cubic"
+    },
+
+    "Animated": {
+        "type": "boolean",
+        "default": true
+    },
+
+    "Circular": {
+        "type": "boolean",
+        "default": false
+    },
+
+    "TweenTime": {
+        "type": "number",
+        "default": 0.5
+    }
+}

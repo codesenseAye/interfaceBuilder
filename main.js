@@ -5,7 +5,16 @@ const path = require('path')
 let win  
 
 function createWindow() { 
-	win = new BrowserWindow({width: 1200, height: 600, titleBarStyle: "hidden", titleBarOverlay: true, frame: false}) 
+	win = new BrowserWindow({
+		width: 1200, height: 600, titleBarStyle: "hidden", titleBarOverlay: false, frame: false,
+
+		webPreferences: {
+		  nodeIntegration: true,
+		  contextIsolation: false,
+		  enableRemoteModule: true,
+		}
+	}) 
+
 	win.setMenuBarVisibility(false);
 	win.setAspectRatio(2.505);
 
